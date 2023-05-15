@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // Connexion à la base de données
-mongoose.connect("mongodb://127.0.0.1:27017/driver_log_db", { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect("mongodb+srv://admin:3hbbAoXqqMeBpXCx@realmcluster.dbjpu.mongodb.net/driver_log_db", { useNewUrlParser: true, useUnifiedTopology: true })
     .then(async () => {
         console.log('Connexion à la base de données réussie');
 
