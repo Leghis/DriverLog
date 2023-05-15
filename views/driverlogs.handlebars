@@ -1,0 +1,442 @@
+<!-- views/driverlogs.handlebars -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Driver Logs</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+    <!-- Inclure les bibliothèques jQuery, jQuery UI et Timepicker -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
+    <!-- Inclure Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <!-- Inclure les CSS de jQuery UI et Timepicker -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
+</head>
+<body>
+<div class="container">
+    <h1>Driver Logs</h1>
+    <h5>Account Manager : <span class="text-bg-primary">Manuela</span></h5>
+    <div class="row">
+        <!-- Boutons -->
+        <div class="col-12">
+            <div class="btn-group d-flex flex-wrap" role="group">
+                <button type="button" class="btn btn-primary m-1" data-toggle="modal" data-target="#addLogModal">
+                    Add Driver Log
+                </button>
+
+                <button type="button" class="btn btn-primary m-1" data-toggle="modal" data-target="#totalCostModal">
+                    Show Amount
+                </button>
+
+                <button type="button" class="btn btn-primary m-1" id="exportPdfButton">
+                    Export PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour afficher le montant total -->
+    <div class="modal fade" id="totalCostModal" tabindex="-1" role="dialog" aria-labelledby="totalCostModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="totalCostModalLabel">Montant total</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="totalCost">
+                    <!-- Le montant total sera inséré ici -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addLogModal" tabindex="-1" role="dialog" aria-labelledby="addLogModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addLogModalLabel">Add Driver Log</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-body">
+                        <form id="addLogForm">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="text" class="form-control" id="date" required>
+                            </div>
+                            <!-- Add hidden input field for log id -->
+                            <input type="hidden" id="logId">
+                            <div class="mb-3">
+                                <label for="arrivalTime" class="form-label">Arrival Time</label>
+                                <input type="time" class="form-control" id="arrivalTime" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cost" class="form-label">Cost</label>
+                                <input type="number" value="1200" class="form-control" id="cost" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="paymentStatus" class="form-label">Payment Status</label>
+                                <select class="form-select" id="paymentStatus" required>
+                                    <option value="Paid">Paid</option>
+                                    <option selected value="Not Paid">Not Paid</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Log</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--    modal message d'erreur-->
+    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="errorModalLabel">Erreur</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="errorMessage">
+                    <!-- Le message d'erreur sera inséré ici -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader" class="text-center" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+    <br>
+
+    <!-- Filtrer - Collapsible -->
+    <div class="card my-3">
+        <div class="card-header">
+            <a class="card-link" data-toggle="collapse" href="#filters">
+                Filtres
+            </a>
+        </div>
+        <div id="filters" class="collapse">
+            <div class="card-body">
+                <form id="filterForm">
+                    <div class="form-group">
+                        <label for="startDate">Date de début</label>
+                        <input type="date" id="startDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">Date de fin</label>
+                        <input type="date" id="endDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterPaymentStatus">Statut de paiement</label>
+                        <select id="filterPaymentStatus" class="form-control">
+                            <option value="">Tous</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Not Paid">Not Paid</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary m-2">Filtrer</button>
+                    <button type="reset" class="btn btn-outline-primary m-2">Reset</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Votre tableau ici -->
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Arrival Time</th>
+            <th>Cost</th>
+            <th>Payment Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+<!--        ajout de nouveau tr-->
+        </tbody>
+    </table>
+    <!-- Ajoutez ceci après votre tableau -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item"><a class="page-link" href="#" id="prev-button">Précédent</a></li>
+            <li class="page-item"><a class="page-link" href="#" id="page-info">Page 1</a></li>
+            <li class="page-item"><a class="page-link" href="#" id="next-button">Suivant</a></li>
+        </ul>
+    </nav>
+</div>
+</body>
+</html>
+
+<script>
+    $(document).ready(function() {
+        var logs = [];
+        var updating = false;
+        var currentPage = 1;
+        var totalPages = 1;
+
+        // Initialiser les widgets de sélection de date et d'heure
+        $('#addLogModal').on('shown.bs.modal', function () {
+            // Initialiser les widgets de sélection de date et d'heure
+            $('#date').datepicker();
+        })
+
+        $('#addLogForm').submit(function(e) {
+            e.preventDefault();
+
+            $('#loader').show();
+
+            var logId = $('#logId').val();
+            var date =  $('#date').val();
+            var arrivalTime = $('#arrivalTime').val();
+            var cost = $('#cost').val();
+            var paymentStatus = $('#paymentStatus').val();
+
+            var url = '/';
+            var method = 'POST';
+
+            if (updating) {
+                url += logId;
+                method = 'PUT';
+            }
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    date: date,
+                    arrivalTime: arrivalTime,
+                    cost: cost,
+                    paymentStatus: paymentStatus
+                }),
+            })
+                    .then(response => {
+                        if (!response.ok) {
+                            // Si la réponse n'est pas OK, on lance une erreur avec le message du serveur
+                            return response.json().then(err => {throw err});
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        $('#loader').hide();
+                        $('#addLogModal').modal('hide');
+                        $('#addLogForm')[0].reset();
+                        $('#logId').val('');
+                        updating = false;
+
+                        // Fetch and update the data after successful operation
+                        fetchData();
+                    })
+                    .catch((error) => {
+                        $('#loader').hide();
+                        // Ferme le formulaire
+                        $('#addLogModal').modal('hide');
+                        // Met à jour le message d'erreur
+                        $('#errorMessage').text("Erreur : Un enregistrement avec cette date a déjà été effectué");
+                        // Affiche le modal d'erreur
+                        $('#errorModal').modal('show');
+                        console.error('Error:', error);
+                    });
+        });
+
+
+        function formatDate(dateString) {
+            var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        function fetchData(startDate, endDate, paymentStatus, page = 1) {
+            var url = '/json?page=' + page;
+            if (startDate || endDate || paymentStatus) {
+                url += '&';
+                if (startDate) {
+                    url += 'startDate=' + startDate + '&';
+                }
+                if (endDate) {
+                    url += 'endDate=' + endDate + '&';
+                }
+                if (paymentStatus) {
+                    url += 'paymentStatus=' + paymentStatus;
+                }
+            }
+            fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        logs = data.logs;
+                        currentPage = page;
+                        totalPages = data.pages;
+
+                        // Mettre à jour l'information de la page
+                        $('#page-info').text('Page ' + currentPage);
+
+                        // Activer ou désactiver les boutons en fonction de la page actuelle
+                        $('#prev-button').parent().toggleClass('disabled', currentPage <= 1);
+                        $('#next-button').parent().toggleClass('disabled', currentPage >= totalPages);
+
+                        $('table tbody').empty();  // Clear the table
+                        logs.forEach(log => {
+                            $('table tbody').append(`
+                    <tr>
+                        <td>${formatDate(log.date)}</td>
+                        <td>${log.arrivalTime}</td>
+                        <td>${log.cost}</td>
+                        <td>${log.paymentStatus}</td>
+                        <td>
+                            <button class="btn btn-primary update-btn" data-id="${log._id}">Update</button>
+                            <button class="btn btn-danger delete-btn" data-id="${log._id}">Delete</button>
+                        </td>
+                    </tr>
+                `);
+                        });
+                    });
+        }
+
+        // Fetch data when page loads
+        fetchData();
+
+        // Ajoutez ces écouteurs d'événements après votre appel à fetchData()
+
+        $('#prev-button').click(function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                fetchData($('#startDate').val(), $('#endDate').val(), $('#filterPaymentStatus').val(), currentPage - 1);
+            }
+        });
+
+        $('#next-button').click(function(e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                fetchData($('#startDate').val(), $('#endDate').val(), $('#filterPaymentStatus').val(), currentPage + 1);
+            }
+        });
+
+        $('#filterForm').submit(function(e) {
+            e.preventDefault();
+
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+            var paymentStatus = $('#filterPaymentStatus').val();
+
+            // Mettre à jour la fonction fetchData pour accepter des filtres
+            fetchData(startDate, endDate, paymentStatus);
+        });
+
+
+        $(document).on('click', '.delete-btn', function() {
+            $('#loader').show();
+
+            var id = $(this).data('id');
+
+            fetch('/' + id, {
+                method: 'DELETE',
+            })
+                    .then(response => response.json())
+                    .then(data => {
+                        $('#loader').hide();
+                        $(this).parents('tr').remove();
+
+                        // Fetch and update the data after successful operation
+                        fetchData();
+                    })
+                    .catch((error) => {
+                        $('#loader').hide();
+                        console.error('Error:', error);
+                    });
+        });
+
+        $(document).on('click', '.update-btn', function() {
+            var logId = $(this).data('id');
+            var log = logs.find(log => log._id === logId);
+
+            $('#logId').val(log._id);
+            $('#date').val(new Date(log.date).toISOString().split('T')[0]);
+            $('#arrivalTime').val(log.arrivalTime);
+            $('#cost').val(log.cost);
+            $('#paymentStatus').val(log.paymentStatus);
+
+            updating = true;
+
+            $('#addLogModal').modal('show');
+        });
+
+        $('#totalCostModal').on('shown.bs.modal', function () {
+            // Récupérer le montant total
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+            var paymentStatus = $('#filterPaymentStatus').val();
+
+            var url = '/total-cost';
+            if (startDate || endDate || paymentStatus) {
+                url += '?';
+                if (startDate) {
+                    url += 'startDate=' + startDate + '&';
+                }
+                if (endDate) {
+                    url += 'endDate=' + endDate + '&';
+                }
+                if (paymentStatus) {
+                    url += 'paymentStatus=' + paymentStatus;
+                }
+            }
+
+            fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Insérer le montant total dans le modal
+                        $('#totalCost').text('Montant total : ' + data.totalCost + " FCFA");
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+        });
+
+        $('#exportPdfButton').click(function(e) {
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+            var paymentStatus = $('#filterPaymentStatus').val();
+
+            var url = '/logs/export/pdf?';
+            if (startDate) {
+                url += 'startDate=' + startDate + '&';
+            }
+            if (endDate) {
+                url += 'endDate=' + endDate + '&';
+            }
+            if (paymentStatus) {
+                url += 'paymentStatus=' + paymentStatus;
+            }
+
+            window.open(url, '_blank');
+        });
+    });
+</script>
+
+
