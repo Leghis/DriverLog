@@ -207,6 +207,12 @@
             $('#date').datepicker();
         })
 
+        $('#addLogModal').on('hidden.bs.modal', function (e) {
+            $('#addLogForm')[0].reset();
+            $('#logId').val('');
+            updating = false;
+        });
+
         $('#addLogForm').submit(function(e) {
             e.preventDefault();
 
